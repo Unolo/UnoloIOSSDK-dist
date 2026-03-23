@@ -190,8 +190,8 @@ class ViewController: UIViewController, UnoloSDKDelegate {
     }
 
     // Called when a new location is received
-    func unoloSDK(didUpdateLocation location: UnoloLocationModel) {
-        print("Location: \(location.latitude), \(location.longitude)")
+    func unoloSDK(didUpdateLocation location: CLLocation) {
+        print("Location: \(location.coordinate.latitude), \(location.coordinate.longitude)")
     }
 
     // Called when an error occurs
@@ -263,17 +263,9 @@ All methods are optional.
 | `.storageError(String)` | Storage error |
 | `.unknown(String)` | Unknown error |
 
-### `UnoloLocationModel`
+### `CLLocation` (Apple's native location object)
 
-| Property | Type | Description |
-|---|---|---|
-| `latitude` | `Double` | Latitude |
-| `longitude` | `Double` | Longitude |
-| `altitude` | `Double` | Altitude |
-| `accuracy` | `Double` | Horizontal accuracy (meters) |
-| `speed` | `Double` | Speed (m/s) |
-| `bearing` | `Double` | Direction |
-| `timestamp` | `Date` | Time of location fix |
+The `didUpdateLocation` callback returns Apple's standard `CLLocation` object with full location data including coordinates, altitude, accuracy, speed, course, timestamp, and more.
 
 ---
 
