@@ -37,7 +37,7 @@ Unolo iOS SDK for real-time location tracking, attendance management, and data s
 Add the following to your `Package.swift` or use Xcode > File > Add Package Dependencies:
 
 ```
-https://github.com/Unolo/UnoloIOSSDK-dist.git
+https://github.com/Unolo/UnoloIOSSDK.git
 ```
 
 ---
@@ -227,7 +227,12 @@ class ViewController: UIViewController, UnoloSDKDelegate {
 | `refreshSettings(completion:)` | Refresh settings from server |
 | `isSDKInitialized() -> Bool` | Check if SDK is initialized |
 | `isCurrentlyTracking() -> Bool` | Check if tracking is active |
-| `getLastLocation() -> CLLocation?` | Get last known location |
+| `isAttendanceMarked() -> Bool` | Check if user is currently punched in |
+| `getLastLocation() -> CLLocation?` | Get last known location (persists across app kill) |
+| `getLocationsSince(timestamp:) -> [LocationModel]` | Get all locations after a given timestamp (ms) |
+| `getUnsyncedLocationCount() -> Int` | Get count of locations not yet synced to server |
+| `getCurrentEmployeeID() -> String` | Get current employee ID |
+| `lastAttendance() -> AttdnceCDModel?` | Get last attendance record from local database |
 | `trackingState` | Current SDK state (read-only) |
 | `delegate` | Set delegate for callbacks |
 
@@ -286,12 +291,35 @@ The SDK automatically requests location permission when `startLocationTracking()
 
 ## Complete Integration Example
 
+### SwiftUI
+
 ```swift
 import SwiftUI
 import UnoloIOSSDK
 
+// Delegate handler (SwiftUI uses a class since View is a struct)
+class UnoloDelegate: NSObject, UnoloSDKDelegate {
+    func unoloSDK(didUpdateLocation location: CLLocation) {
+        print("Location: \(location.coordinate.latitude), \(location.coordinate.longitude)")
+    }
+
+    func unoloSDK(didFailWithError error: UnoloError) {
+        print("Error: \(error.localizedDescription)")
+    }
+
+    func unoloSDK(didChangeTrackingStatus isTracking: Bool) {
+        print("Tracking: \(isTracking)")
+    }
+
+    func unoloSDK(didChangePermissionStatus status: CLAuthorizationStatus) {
+        print("Permission: \(status.rawValue)")
+    }
+}
+
 @main
 struct MyApp: App {
+    let delegate = UnoloDelegate()
+
     init() {
         UnoloSDK.shared.initialize(
             companyID: "4010",
@@ -305,6 +333,7 @@ struct MyApp: App {
                 print("SDK error: \(error.localizedDescription)")
             }
         }
+        UnoloSDK.shared.delegate = delegate
     }
 
     var body: some Scene {
@@ -314,7 +343,7 @@ struct MyApp: App {
     }
 }
 
-struct ContentView: View, UnoloSDKDelegate {
+struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 20) {
@@ -334,6 +363,120 @@ struct ContentView: View, UnoloSDKDelegate {
                 UnoloSDK.shared.syncNow()
             }
         }
+    }
+}
+```
+
+### UIKit (Swift)
+
+**AppDelegate.swift** — Initialize SDK here:
+
+```swift
+import UIKit
+import UnoloIOSSDK
+
+@main
+class AppDelegate: UIResponder, UIApplicationDelegate {
+
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+
+        UnoloSDK.shared.initialize(
+            companyID: "4010",
+            employeeID: "emp001",
+            licenseKey: "your-license-key"
+        ) { result in
+            switch result {
+            case .success:
+                print("SDK ready")
+            case .failure(let error):
+                print("SDK error: \(error.localizedDescription)")
+            }
+        }
+
+        return true
+    }
+}
+```
+
+**ViewController.swift** — Use SDK methods:
+
+```swift
+import UIKit
+import UnoloIOSSDK
+
+class ViewController: UIViewController, UnoloSDKDelegate {
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        UnoloSDK.shared.delegate = self
+    }
+
+    // Start tracking (Punch In)
+    @IBAction func startTrackingTapped(_ sender: UIButton) {
+        UnoloSDK.shared.startLocationTracking { result in
+            switch result {
+            case .success:
+                print("Tracking started")
+            case .failure(let error):
+                print("Failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    // Stop tracking (Punch Out)
+    @IBAction func stopTrackingTapped(_ sender: UIButton) {
+        UnoloSDK.shared.stopLocationTracking { result in
+            switch result {
+            case .success:
+                print("Tracking stopped")
+            case .failure(let error):
+                print("Failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    // Check status
+    func checkStatus() {
+        let isInitialized = UnoloSDK.shared.isSDKInitialized()
+        let isTracking = UnoloSDK.shared.isCurrentlyTracking()
+        let isPunchedIn = UnoloSDK.shared.isAttendanceMarked()
+        let empId = UnoloSDK.shared.getCurrentEmployeeID()
+        let unsyncedCount = UnoloSDK.shared.getUnsyncedLocationCount()
+
+        print("Initialized: \(isInitialized)")
+        print("Tracking: \(isTracking)")
+        print("Punched In: \(isPunchedIn)")
+        print("Employee: \(empId)")
+        print("Unsynced: \(unsyncedCount)")
+    }
+
+    // Get locations since punch in
+    func getLocations() {
+        if let attendance = UnoloSDK.shared.lastAttendance() {
+            let locations = UnoloSDK.shared.getLocationsSince(timestamp: attendance.timestamp)
+            for loc in locations {
+                print("Lat: \(loc.lat), Lon: \(loc.lon), Time: \(loc.timestamp)")
+            }
+        }
+    }
+
+    // MARK: - UnoloSDKDelegate
+
+    func unoloSDK(didUpdateLocation location: CLLocation) {
+        print("Location: \(location.coordinate.latitude), \(location.coordinate.longitude)")
+    }
+
+    func unoloSDK(didFailWithError error: UnoloError) {
+        print("Error: \(error.localizedDescription)")
+    }
+
+    func unoloSDK(didChangeTrackingStatus isTracking: Bool) {
+        print("Tracking: \(isTracking)")
+    }
+
+    func unoloSDK(didChangePermissionStatus status: CLAuthorizationStatus) {
+        print("Permission: \(status.rawValue)")
     }
 }
 ```
