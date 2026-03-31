@@ -16,8 +16,8 @@
       targets: [
           .binaryTarget(
               name: "UnoloIOSSDK",
-              url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/0.5.0/UnoloIOSSDK.xcframework.zip",
-              checksum: "5f479bf2818e1fcda29d74c8f07be55495e6bfa11963b77735f3ce5b1b37dde1"
+              url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/0.6.0/UnoloIOSSDK.xcframework.zip",
+              checksum: "a8717edf4de1a6239f784133e5a79683800d26f9eaee883b357b897756b37736"
           ),
       ]
   )
