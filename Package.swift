@@ -12,6 +12,14 @@ let package = Package(
             name: "UnoloIOSSDK",
             targets: ["UnoloIOSSDKWrapper"]
         ),
+        .library(
+            name: "UnoloFirebaseAuth",
+            targets: ["FirebaseAuthTarget"]
+        ),
+        .library(
+            name: "UnoloApollo",
+            targets: ["ApolloTarget"]
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/apollographql/apollo-ios", exact: "0.39.0"),
