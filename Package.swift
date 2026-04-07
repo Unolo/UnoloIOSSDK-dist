@@ -16,8 +16,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "UnoloIOSSDK",
-            url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/0.9.1/UnoloIOSSDK.xcframework.zip",
-            checksum: "56fe4e1561e38b60093680dc80155f4f625e3250cf6911518509e7b3bab32722"
+            url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/0.9.2/UnoloIOSSDK.xcframework.zip",
+            checksum: "5a9b3216eb3138dbf53f6f55aeec687763b1d15642ba88bb5ea874ff89bbb51e"
         ),
     ]
 )
