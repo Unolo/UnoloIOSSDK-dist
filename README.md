@@ -93,6 +93,24 @@ UnoloSDK.shared.initialize(
 
 > **Note:** `initialize()` must be called before any other SDK method.
 
+### Credential Change (User Switch)
+
+If you call `initialize()` with different credentials (e.g., switching employees), the SDK automatically:
+
+1. Detects the credential change
+2. Clears the previous user's cached session and local data
+3. Performs a fresh login with new credentials
+
+```swift
+// Employee 1
+UnoloSDK.shared.initialize(companyID: "4010", employeeID: "emp001", licenseKey: "key") { ... }
+
+// Later, switch to Employee 2 — old data is automatically cleared
+UnoloSDK.shared.initialize(companyID: "4010", employeeID: "emp002", licenseKey: "key") { ... }
+```
+
+This works both during runtime and after app restart — no manual cleanup needed.
+
 ---
 
 ## Start & Stop Tracking
