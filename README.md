@@ -41,6 +41,8 @@ Add the following to your `Package.swift` or use Xcode > File > Add Package Depe
 https://github.com/Unolo/UnoloIOSSDK-dist.git
 ```
 
+**Recommended version:** `0.9.5` (Up to Next Major Version)
+
 ---
 
 ## 3. Setup
@@ -68,6 +70,8 @@ For background location tracking, also add:
 ```
 
 > **Important:** Without `UIBackgroundModes > location`, the SDK will not track location in the background.
+
+> ⚠️ **"Always" location permission is REQUIRED.** The SDK is built for continuous background tracking and **only requests `Always` authorization**. If the user grants just "While Using App" (WhenInUse), background tracking will stop within 5–10 minutes and will not resume after the app is killed or the device restarts.
 
 ---
 
