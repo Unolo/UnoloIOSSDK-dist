@@ -25,7 +25,7 @@ Reliable background location tracking for field workforce management.
 
 ## 1. Requirements
 
-- iOS 15.6+
+- iOS 15.0+
 - Xcode 15.0+
 - Swift 5.9+
 
@@ -230,7 +230,7 @@ if let location = UnoloSDK.shared.getLastLocation() {
 ```swift
 let locations = UnoloSDK.shared.getLocationsSince(timestamp: 1711900800000)
 for loc in locations {
-    print("Lat: \(loc.lat), Lon: \(loc.lon), Time: \(loc.timestamp)")
+    print("Lat: \(loc.latitude), Lon: \(loc.longitude), Time: \(loc.timestamp)")
 }
 ```
 
@@ -243,7 +243,7 @@ let isTracking = UnoloSDK.shared.isAttendanceMarked()
 // Get last attendance record
 if let attendance = UnoloSDK.shared.lastAttendance() {
     print("EventType: \(attendance.eventTypeID)")  // 8 = Started, 9 = Stopped
-    print("Location: \(attendance.lat), \(attendance.lon)")
+    print("Location: \(attendance.latitude), \(attendance.longitude)")
     print("Time: \(attendance.timestamp)")
 }
 ```
@@ -394,23 +394,20 @@ The `didUpdateLocation` callback returns `UnoloLocationModel` with location data
 
 ### `getLocationsSince()` Response
 
+Returns `[UnoloLocationModel]` — same properties as `UnoloLocationModel` above.
+
+### `UnoloAttendanceModel`
+
 | Property | Type | Description |
 |---|---|---|
-| `lat` | `Float` | Latitude |
-| `lon` | `Float` | Longitude |
-| `accuracy` | `Float` | Horizontal accuracy in meters |
-| `speed` | `Float` | Speed in m/s |
-| `bearing` | `Float` | Course/heading |
+| `eventTypeID` | `Int` | 8 = Tracking Started, 9 = Tracking Stopped |
+| `latitude` | `Double` | Latitude |
+| `longitude` | `Double` | Longitude |
+| `accuracy` | `Double` | Horizontal accuracy in meters |
+| `speed` | `Double` | Speed in m/s |
+| `bearing` | `Double` | Course/heading |
 | `timestamp` | `Double` | Timestamp in milliseconds |
 | `isSynced` | `Bool` | Whether this record has been synced to server |
-
-### `lastAttendance()` Response
-
-Includes all properties from `getLocationsSince()` plus:
-
-| Property | Type | Description |
-|---|---|---|
-| `eventTypeID` | `Int16` | 8 = Tracking Started, 9 = Tracking Stopped |
 
 ### `UnoloPermissionStatus`
 
@@ -535,7 +532,7 @@ struct ContentView: View {
                 if let attendance = UnoloSDK.shared.lastAttendance() {
                     let locations = UnoloSDK.shared.getLocationsSince(timestamp: attendance.timestamp)
                     for loc in locations {
-                        print("Lat: \(loc.lat), Lon: \(loc.lon), Time: \(loc.timestamp)")
+                        print("Lat: \(loc.latitude), Lon: \(loc.longitude), Time: \(loc.timestamp)")
                     }
                 }
             }
@@ -633,7 +630,7 @@ class ViewController: UIViewController, UnoloSDKDelegate {
         if let attendance = UnoloSDK.shared.lastAttendance() {
             let locations = UnoloSDK.shared.getLocationsSince(timestamp: attendance.timestamp)
             for loc in locations {
-                print("Lat: \(loc.lat), Lon: \(loc.lon), Time: \(loc.timestamp)")
+                print("Lat: \(loc.latitude), Lon: \(loc.longitude), Time: \(loc.timestamp)")
             }
         }
     }
