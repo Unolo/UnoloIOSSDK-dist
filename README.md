@@ -25,7 +25,7 @@ Reliable background location tracking for field workforce management.
 
 ## 1. Requirements
 
-- iOS 15.0+
+- iOS 15.6+
 - Xcode 15.0+
 - Swift 5.9+
 
