@@ -4,7 +4,7 @@ Punch-in / punch-out UI with GPS-validated selfie, optional odometer capture, ge
 
 **Distribution:** XCFramework (`UnoloIOSSDK.framework`) via Swift Package Manager
 **Current version:** `1.1.0`
-**Bundle:** Lottie + GoogleToolboxForMac + MLKit auto-embedded inside the framework — no extra deps for host app
+**Bundle:** All internal dependencies auto-embedded — no extra deps required in host app
 
 This guide assumes you've finished the [base location-tracking integration](./README.md). That covers `Info.plist` keys, Always permission flow, SDK init, and the basic tracking lifecycle. **Do that first.** This guide covers only the attendance-specific additions.
 
@@ -63,7 +63,7 @@ In Xcode: **File → Add Package Dependencies** → paste:
 https://github.com/Unolo/UnoloIOSSDK-dist.git
 ```
 
-Pin to the latest tagged version (e.g. `1.1.0`). The SDK ships as `UnoloIOSSDK.framework` with **all internal dependencies (Lottie, GoogleToolboxForMac, MLKit resources) auto-embedded** — your host app doesn't need to add them separately.
+Pin to the latest tagged version (e.g. `1.1.0`). The SDK ships as `UnoloIOSSDK.framework` with **all internal dependencies auto-embedded** — your host app doesn't need to add them separately.
 
 ### Link the framework
 
