@@ -98,16 +98,10 @@ UnoloSDK.shared.initialize(
 
 When `initialize()` is called with credentials that differ from the previous session (different `employeeID`, `companyID`, or `licenseKey`), the SDK performs a graceful migration automatically:
 
-**During runtime (app is running):**
 1. **Best-effort data sync** — attempts to sync all pending data for the old employee before clearing.
 2. **Signs out** the old session.
 3. **Clears all local data** — CoreData and UserDefaults are wiped.
 4. **Performs fresh login** with the new credentials.
-
-**After app restart / kill:**
-1. **Detects credential change** from saved credentials.
-2. **Clears all local data** — CoreData, cached token, and UserDefaults are wiped.
-3. **Performs fresh login** with the new credentials.
 
 ```swift
 // Switch employees — just call initialize() with new credentials
