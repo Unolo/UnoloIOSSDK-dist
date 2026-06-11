@@ -22,13 +22,13 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "UnoloIOSSDK",
-            url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/1.1.7/UnoloIOSSDK.xcframework.zip",
-            checksum: "88f659c28a606c7ef988af7bbaecda1997813e41e5023105fa33b1a04368c3ac"
+            url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/1.1.8/UnoloIOSSDK.xcframework.zip",
+            checksum: "1239a6dce64ab8b7386bdd716900a6a213ff0f44eff286c2479fc39d89cc9adc"
         ),
         .binaryTarget(
             name: "UnoloAttendance",
-            url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/1.1.7/UnoloAttendance.xcframework.zip",
-            checksum: "449e2a58acd5859bbad414a914c84fdd0956315c657b27102f939e463edca899"
+            url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/1.1.8/UnoloAttendance.xcframework.zip",
+            checksum: "1bdd2c14010ee03d75e4558bc9c08762085efb498c58517ec56d93820c2073c3"
         ),
     ]
 )
