@@ -20,6 +20,7 @@ Reliable background location tracking for field workforce management.
 12. [Permissions](#12-permissions)
 13. [Complete Integration Example](#13-complete-integration-example)
 14. [Troubleshooting](#14-troubleshooting)
+15. [Geo-Tag Camera](#15-geo-tag-camera)
 
 ---
 
@@ -40,8 +41,6 @@ Add the following to your `Package.swift` or use Xcode > File > Add Package Depe
 ```
 https://github.com/Unolo/UnoloIOSSDK-dist.git
 ```
-
-**Recommended version:** `0.9.5` (Up to Next Major Version)
 
 ---
 
@@ -67,6 +66,13 @@ For background location tracking, also add:
 <array>
     <string>location</string>
 </array>
+```
+
+If you use the **Geo-Tag Camera** (see section 15), also add the camera permission:
+
+```xml
+<key>NSCameraUsageDescription</key>
+<string>Camera access is needed to capture geo-tagged photos</string>
 ```
 
 > **Important:** Without `UIBackgroundModes > location`, the SDK will not track location in the background.
@@ -217,9 +223,26 @@ UnoloSDK.shared.refreshSettings { result in
 
 ### Last location
 
+Returns the last-saved location from local storage instantly (no GPS request):
+
 ```swift
 if let location = UnoloSDK.shared.getLastLocation() {
     print("\(location.latitude), \(location.longitude) +/-\(location.accuracy)m")
+}
+```
+
+### Current location (fresh GPS → DB fallback)
+
+Fetches a location on demand: tries a **fresh GPS fix first**; if GPS is unavailable, it
+**falls back to the last-saved location** from local storage.
+
+```swift
+UnoloSDK.shared.getCurrentLocation { location in
+    if let location = location {
+        print("\(location.latitude), \(location.longitude) +/-\(location.accuracy)m")
+    } else {
+        print("Location unavailable")
+    }
 }
 ```
 
@@ -235,8 +258,8 @@ for loc in locations {
 ### Attendance
 
 ```swift
-// Check if currently tracking
-let isTracking = UnoloSDK.shared.isAttendanceMarked()
+// Check if attendance is marked (user is punched in)
+let isMarked = UnoloSDK.shared.isAttendanceMarked()
 
 // Get last attendance record
 if let attendance = UnoloSDK.shared.lastAttendance() {
@@ -350,7 +373,10 @@ class ViewController: UIViewController, UnoloSDKDelegate {
 | `isCurrentlyTracking() -> Bool` | Check if tracking is active |
 | `isAttendanceMarked() -> Bool` | Check if user is currently punched in |
 | `getLastLocation() -> UnoloLocationModel?` | Get last known location (persists across app kill) |
+| `getCurrentLocation(completion:)` | Fetch current location — fresh GPS first, falls back to last-saved location |
 | `getLocationsSince(timestamp:)` | Get all locations after a given timestamp (ms) |
+| `provideGoogleMapsKey(_:)` | The host app passes its **own** Google Maps iOS API key here, once at launch (required before using the geo-tag camera) |
+| `presentGeoTagCamera(from:completion:)` | Present the geo-tag camera (`from` is optional — SDK auto-resolves the top VC); returns lat/long + saved image path |
 | `getUnsyncedLocationCount() -> Int` | Get count of locations not yet synced to server |
 | `getCurrentEmployeeID() -> String` | Get current employee ID |
 | `lastAttendance()` | Get last attendance record from local database |
@@ -664,6 +690,113 @@ class ViewController: UIViewController, UnoloSDKDelegate {
 | Background tracking not working | Add `UIBackgroundModes > location` in Info.plist |
 | Data not syncing | Check network connection, call `syncNow()` to force sync |
 | `notInitialized` error | Call `initialize()` before any other SDK method |
+
+---
+
+## 15. Geo-Tag Camera
+
+Opens a **live camera with a geo-tag overlay** (mini-map + address + latitude/longitude + timestamp).
+When the user taps capture, the overlay is **burned into the photo**, the image is saved to the app's
+Documents directory, and the host receives the **latitude, longitude, and saved file path**.
+
+### Setup
+
+This feature uses Google Maps. **The host app provides its own Google Maps iOS API key** — set it
+**once at app launch** (on iOS the Maps key is process-global, so one call covers the whole app):
+
+```swift
+// App launch (e.g. App init / didFinishLaunching)
+UnoloSDK.shared.provideGoogleMapsKey("YOUR_GOOGLE_MAPS_IOS_API_KEY")
+```
+
+Add the camera permission to your `Info.plist`:
+
+```xml
+<key>NSCameraUsageDescription</key>
+<string>Camera access is needed to capture geo-tagged photos</string>
+```
+
+### Usage
+
+Just call `presentGeoTagCamera` — the SDK presents the camera from the top-most view controller
+automatically. On `.success`, load the saved image from `geoTag.filePath`.
+
+#### SwiftUI
+
+```swift
+import SwiftUI
+import UnoloIOSSDK
+
+struct GeoTagView: View {
+    @State private var capturedImage: UIImage?
+    @State private var status = ""
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Button("Geo-Tag Camera") {
+                // No view controller needed — the SDK resolves the top-most VC itself.
+                UnoloSDK.shared.presentGeoTagCamera { result in
+                    switch result {
+                    case .success(let geoTag):
+                        status = "Lat: \(geoTag.latitude), Long: \(geoTag.longitude)"
+                        capturedImage = UIImage(contentsOfFile: geoTag.filePath)
+                    case .failure(let error):
+                        status = "Failed: \(error.localizedDescription)"
+                    }
+                }
+            }
+
+            if let image = capturedImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+            }
+
+            Text(status)
+        }
+        .padding()
+    }
+}
+```
+
+#### UIKit
+
+```swift
+import UIKit
+import UnoloIOSSDK
+
+class GeoTagViewController: UIViewController {
+
+    @IBOutlet weak var imageView: UIImageView!
+
+    @IBAction func geoTagButtonTapped(_ sender: UIButton) {
+        // Pass `self`, or omit `from:` to let the SDK resolve the top-most VC.
+        UnoloSDK.shared.presentGeoTagCamera(from: self) { [weak self] result in
+            switch result {
+            case .success(let geoTag):
+                print("Lat: \(geoTag.latitude), Long: \(geoTag.longitude)")
+                self?.imageView.image = UIImage(contentsOfFile: geoTag.filePath)
+            case .failure(let error):
+                print("Geo-tag failed: \(error.localizedDescription)")
+            }
+        }
+    }
+}
+```
+
+> `provideGoogleMapsKey(_:)` must be called **before** `presentGeoTagCamera`. If it isn't, the call
+> fails with a clear error (the screen simply doesn't open — **no crash**). The camera also requires
+> `NSCameraUsageDescription` in the host app's Info.plist.
+
+### `UnoloGeoTagResult`
+
+| Property | Type | Description |
+|---|---|---|
+| `latitude` | `Double` | Latitude captured at the time of the photo |
+| `longitude` | `Double` | Longitude captured at the time of the photo |
+| `filePath` | `String` | Absolute path of the saved geo-tagged JPEG (host opens this) |
+| `fileName` | `String` | File name of the saved JPEG |
+| `description` | `String` | Reserved (currently empty) |
 
 ---
 
