@@ -21,6 +21,8 @@ Reliable background location tracking for field workforce management.
 13. [Complete Integration Example](#13-complete-integration-example)
 14. [Troubleshooting](#14-troubleshooting)
 15. [Geo-Tag Camera](#15-geo-tag-camera)
+16. [Attendance Module](#16-attendance-module)
+17. [CustomClient Module](#17-customclient-module)
 
 ---
 
@@ -797,6 +799,205 @@ class GeoTagViewController: UIViewController {
 | `filePath` | `String` | Absolute path of the saved geo-tagged JPEG (host opens this) |
 | `fileName` | `String` | File name of the saved JPEG |
 | `description` | `String` | Reserved (currently empty) |
+
+---
+
+## 16. Attendance Module
+
+Punch-in / punch-out UI with GPS-validated selfie, optional odometer capture, and geofence-based auto-attendance. Add-on module — install it alongside the base integration above. (Read-only queries like `isAttendanceMarked()` / `lastAttendance()` are already part of the base API — see [§ 8](#8-location-queries) — this section covers the actual punch-in **screen**.)
+
+### 16.1 Installation
+
+When adding the package, also select the **UnoloAttendance** library product.
+
+```swift
+import UnoloIOSSDK
+import UnoloAttendance
+```
+
+### 16.2 Setup
+
+Add to `Info.plist`, in addition to the base integration's keys:
+
+```xml
+<key>NSCameraUsageDescription</key>
+<string>We need camera access for the selfie attendance step</string>
+```
+
+### 16.3 Show the Attendance Screen
+
+The SDK gives you the attendance view controller through a completion handler — **the host app decides how to display it**. Two ways, depending on whether the SDK owns the navigation or you want it inside your own nav stack:
+
+| | `presentAttendanceScreen` | `pushAttendanceScreen` |
+|---|---|---|
+| Returns | A `UINavigationController` (SDK-wrapped) | The raw attendance `UIViewController` (no wrap) |
+| How to show | `present(...)` it **modally** | `pushViewController(...)` it onto **your** nav |
+| Navigation bar | SDK's own bar (title + back) | **Your** nav bar (your back button + styling) |
+| Host tab bar | Hidden by the modal | **Stays visible** |
+| Use when | You want a self-contained full-screen flow | You want attendance inside your existing nav / tab UI |
+
+Both return `success` only when `initialize(...)` has completed (otherwise `.sdkNotInitialized`) and Attendance is enabled server-side for your company (otherwise `.moduleNotEnabled`).
+
+**Present modally:**
+
+```swift
+UnoloSDK.shared.presentAttendanceScreen { result in
+    switch result {
+    case .success(let attendanceVC):
+        attendanceVC.modalPresentationStyle = .fullScreen
+        self.present(attendanceVC, animated: true)
+    case .failure(let error):
+        print("Attendance not available: \(error.localizedDescription)")
+    }
+}
+```
+
+**Push into your own navigation stack** (your nav bar stays in charge, your tab bar stays visible):
+
+```swift
+UnoloSDK.shared.pushAttendanceScreen { result in
+    switch result {
+    case .success(let attendanceVC):
+        self.navigationController?.pushViewController(attendanceVC, animated: true)
+    case .failure(let error):
+        print("Attendance not available: \(error.localizedDescription)")
+    }
+}
+```
+
+> **Important:** the VC returned by `pushAttendanceScreen` **must be pushed**, not presented — presenting it modally without an enclosing `UINavigationController` silently breaks the internal selfie / odometer / face-detection steps, since those push child screens onto an enclosing nav controller. If you don't have your own nav stack, use `presentAttendanceScreen` instead.
+
+### 16.4 API Reference
+
+| Method | Returns | Notes |
+|---|---|---|
+| `presentAttendanceScreen(completion:)` | `Result<UIViewController, UnoloAttendanceError>` | Returns a wrapped `UINavigationController` — **present** modally |
+| `pushAttendanceScreen(completion:)` | `Result<UIViewController, UnoloAttendanceError>` | Returns the raw VC — **push** onto your own `UINavigationController` |
+
+### `UnoloAttendanceError`
+
+| Case | When |
+|---|---|
+| `.sdkNotInitialized` | Called before `initialize(...)` completed |
+| `.moduleNotEnabled` | Attendance not enabled for this company — contact `support@unolo.com` |
+
+### 16.5 Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `presentAttendanceScreen` returns `.moduleNotEnabled` | Attendance isn't enabled for your company — confirm with support |
+| Selfie step fails / crashes on simulator | Test on a real device |
+| After `pushAttendanceScreen`, selfie/odometer steps don't appear | The returned VC must be **pushed** onto a `UINavigationController`, not presented modally |
+
+---
+
+## 17. CustomClient Module
+
+Template-driven client management: create/edit clients against company-defined field templates, browse them in a list or on a map, and view/edit full client details — including OTP-gated templates, address picking, and photo/file attachments. Add-on module — install it alongside the base integration above.
+
+> **Requirement:** iOS 16.1+ (higher than the base SDK's 15.6+) — CustomClient uses SwiftUI's `NavigationStack`/`navigationDestination`, which need iOS 16.
+
+### 17.1 Installation
+
+When adding the package, select the **UnoloCustomClient** library product — `UnoloIOSSDK` comes along with it automatically (`UnoloCustomClient` depends on it), so you don't need to select it separately.
+
+```swift
+import UnoloIOSSDK
+import UnoloCustomClient
+```
+
+### 17.2 Setup
+
+Add to `Info.plist`, in addition to the base integration's keys:
+
+```xml
+<key>NSCameraUsageDescription</key>
+<string>We need camera access to attach photo evidence to a client</string>
+<key>NSContactsUsageDescription</key>
+<string>Allow this to import clients from your phonebook</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Allow this for uploading photos from your library</string>
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>Allow this for saving photos</string>
+```
+
+CustomClient's address fields use Google Places autocomplete, which needs the same Maps API key the SDK already takes via `provideGoogleMapsKey(_:)` (see [§ 15](#15-geo-tag-camera)) — there's no separate key to configure. Just make sure it's called before presenting any CustomClient screen. The Google Cloud Console key must have your app's bundle ID in its iOS application restrictions, or the map renders blank (pins still show, base map tiles don't).
+
+### 17.3 Show the CustomClient Screen
+
+CustomClient currently has **only one way to show its screens** — the returned view controller **must** be either presented modally, or wrapped as the **sole root** of a brand-new `UINavigationController` (e.g. for a tab-bar item). It must **never** be pushed onto a nav stack that already has other screens, because it manages its own internal SwiftUI navigation (list → detail, list → create) that isn't designed to coexist with a pre-populated host stack.
+
+Both calls below return `success` only when `initialize(...)` has completed (otherwise `.sdkNotInitialized`) and CustomClient is enabled server-side for your company (otherwise `.moduleNotEnabled`).
+
+**Browse / select clients (list + map):**
+
+```swift
+UnoloSDK.shared.presentCustomClientScreen(
+    showAddClientButton: true,   // shows the "+" FAB that opens the create flow
+    templateIDs: nil             // nil/empty = all templates; restrict the "+" flow to specific ones
+) { result in
+    switch result {
+    case .success(let vc):
+        vc.modalPresentationStyle = .fullScreen
+        self.present(vc, animated: true)
+    case .failure(let error):
+        print("CustomClient not available: \(error.localizedDescription)")
+    }
+}
+```
+
+The returned screen is self-contained: template tabs, search/filter, list/map toggle, the "+" create flow, and tapping a client opens its detail view — all inside its own navigation.
+
+**Go straight to client creation** (skip the list, e.g. from your own "Add Client" button):
+
+```swift
+UnoloSDK.shared.presentCustomClientCreationScreen { result in
+    switch result {
+    case .success(let vc):
+        vc.modalPresentationStyle = .fullScreen
+        self.present(vc, animated: true)
+    case .failure(let error):
+        print("CustomClient creation not available: \(error.localizedDescription)")
+    }
+}
+```
+
+**Checking the module:**
+
+```swift
+if UnoloSDK.shared.isCustomClientsEnabled {
+    // show your own "Clients" entry point
+}
+```
+
+### 17.4 Sync
+
+CustomClient's data (create/update/delete) syncs automatically as part of the SDK's normal sync cycle — `UnoloSDK.shared.syncNow()` covers it along with locations/attendance/events. The first-ever sync on a device does a full bulk fetch (paginated); every sync after that is incremental. A client created locally that hasn't reached the server yet is included in the next `syncNow()` — sync is bidirectional, not just a pull.
+
+### 17.5 API Reference
+
+| Method | Returns | Notes |
+|---|---|---|
+| `presentCustomClientScreen(showAddClientButton:templateIDs:completion:)` | `Result<UIViewController, UnoloCustomClientError>` | List/map selection → detail flow. **Present** modally, or wrap as the sole root of a fresh `UINavigationController` |
+| `presentCustomClientCreationScreen(completion:)` | `Result<UIViewController, UnoloCustomClientError>` | Select-template → create-client flow, skipping the list |
+| `isCustomClientsEnabled` | `Bool` | Whether the module is enabled server-side for this company |
+
+### `UnoloCustomClientError`
+
+| Case | When |
+|---|---|
+| `.sdkNotInitialized` | Called before `initialize(...)` completed |
+| `.moduleNotEnabled` | CustomClient not enabled for this company — contact `support@unolo.com` |
+
+### 17.6 Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `presentCustomClientScreen` returns `.moduleNotEnabled` | CustomClient isn't enabled for your company — confirm with support |
+| Map shows a blank/black background but pins still render | Your Google Maps API key's iOS application restrictions in Google Cloud Console don't include this app's bundle ID — add it |
+| Crash opening a location/address field: "Google Places SDK... must be initialized via provideAPIKey" | Call `UnoloSDK.shared.provideGoogleMapsKey(_:)` **before** presenting any CustomClient screen |
+| App crashes/behaves oddly after pushing the returned VC onto an existing nav stack | Don't push it — present modally, or use it as the sole root of a brand-new `UINavigationController` |
+| Contact field can't pick from phonebook | Missing `NSContactsUsageDescription` in `Info.plist`, or the user denied Contacts access |
 
 ---
 
