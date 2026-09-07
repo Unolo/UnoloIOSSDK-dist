@@ -26,18 +26,18 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "UnoloIOSSDK",
-            url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/1.0.0/UnoloIOSSDK.xcframework.zip",
-            checksum: "7e72bdca58beb5538d49a51aa46b9129ddb18f7e8e05d8badcfedd072ed9903b"
+            url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/1.0.1/UnoloIOSSDK.xcframework.zip",
+            checksum: "764ccdc410e3ce3d404e1b7573d9ef5175f77563b96d4e55fc07131094863005"
         ),
         .binaryTarget(
             name: "UnoloAttendance",
-            url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/1.0.0/UnoloAttendance.xcframework.zip",
-            checksum: "b0644d55c250130b001366825f0d1e74033ba2354b7e2a81e147114c313f5679"
+            url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/1.0.1/UnoloAttendance.xcframework.zip",
+            checksum: "1a26dabbcbbf5e1bf07121d536ba2f44b19391689da216249b414c8cf92706fe"
         ),
         .binaryTarget(
             name: "UnoloCustomClient",
-            url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/1.0.0/UnoloCustomClient.xcframework.zip",
-            checksum: "07524ec6fb2369e2b2ec1e80d4a8436f69aac2a5334e9c6deda6c0974b79626c"
+            url: "https://github.com/Unolo/UnoloIOSSDK-dist/releases/download/1.0.1/UnoloCustomClient.xcframework.zip",
+            checksum: "80c41656317f3d1abe12c0d5cb5eb08fa5adbd717a94f9d463e7cb6b50333fd6"
         ),
     ]
 )
